@@ -1,19 +1,17 @@
 import nltk
+
 from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import re
-
-#in terminal
-#import
-#inltk.download('punkt_tab')
+from difflib import get_close_matches
 
 
-# Download necessary NLTK data
-nltk.download('wordnet')
+# Download necessary NLTK datap
 nltk.download('punkt_tab')
+nltk.download('wordnet')
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('averaged_perceptron_tagger_eng')
@@ -70,6 +68,8 @@ def get_synonyms(word, pos):
 # Feature extraction
 def extract_features(user_input):
     tokens = preprocess_input(user_input)
+    if not tokens:
+        return set()  # Return empty feature set if no valid tokens
     tagged = pos_tag(tokens)
     features = []
     for word, tag in tagged:
@@ -85,6 +85,7 @@ def normalize_input(user_input):
     user_input = re.sub(r"\b(i am|i'm)\b", "im", user_input)  # Normalize "i am" and "i'm" to "im"
     user_input = re.sub(r"\b(you are|you're)\b", "youre", user_input)  # Normalize "you are" and "you're" to "youre"
     user_input = re.sub(r"\b(thankyou)\b", "thank you", user_input)  # Normalize "thankyou" to "thank you"
+    user_input = re.sub(r"[^a-zA-Z\s]", "", user_input)
     return user_input
 
 # Find the best response
@@ -96,15 +97,31 @@ def find_best_response(user_input):
     if normalized_input in user_inputs:
         index = user_inputs.index(normalized_input)
         return chatbot_responses[index]
+    
+    # Fuzzy match
+    close_matches = get_close_matches(normalized_input, user_inputs, n=1, cutoff=0.75)
+    if close_matches:
+        index = user_inputs.index(close_matches[0])
+        return chatbot_responses[index]
+
 
     # If no exact match, use feature-based matching
-    user_features = extract_features(user_input.lower())
+        user_features = extract_features(normalized_input)
+    user_features = extract_features(normalized_input)
+    best_match = None
+    best_score = 0
+
     for i, script in enumerate(user_inputs):
         script_features = extract_features(script)
-        if user_features & script_features:  # Check for any overlapping words/synonyms
-            return chatbot_responses[i]
+        score = len(user_features & script_features)
+        if score > best_score:
+            best_score = score
+            best_match = i
 
-    # Default response if no match is found
+    if best_match is not None:
+        return chatbot_responses[best_match]
+
+    # 4. Default fallback
     return "I'm here to listen. Tell me more about what's on your mind."
 
 # Main chatbot function
