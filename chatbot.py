@@ -13,8 +13,10 @@ import re
 
 # Download necessary NLTK data
 nltk.download('wordnet')
+nltk.download('punkt_tab')
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
+nltk.download('averaged_perceptron_tagger_eng')
 nltk.download('stopwords')
 nltk.download('omw-1.4')
 
